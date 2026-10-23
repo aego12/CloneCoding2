@@ -153,10 +153,18 @@ const initTopMenu = () => {
         return;
     }
 
+    const updateIcon = (item) => {
+        const icon = item.querySelector('.top-menu__icon img');
+        const highlighted = item.classList.contains('top-menu__item--active') ||
+            item.classList.contains('is-preview');
+        if (icon) {
+            icon.src = highlighted ? icon.dataset.activeSrc : icon.dataset.inactiveSrc;
+        }
+    };
+
     const setActiveItem = (activeItem) => {
         items.forEach((item) => {
             const link = item.querySelector('.top-menu__link');
-            const icon = item.querySelector('.top-menu__icon img');
             const isActive = item === activeItem;
 
             item.classList.toggle('top-menu__item--active', isActive);
@@ -169,14 +177,28 @@ const initTopMenu = () => {
                 }
             }
 
-            if (icon) {
-                icon.src = isActive ? icon.dataset.activeSrc : icon.dataset.inactiveSrc;
-            }
+            updateIcon(item);
         });
     };
 
     items.forEach((item) => {
         const link = item.querySelector('.top-menu__link');
+        let hovered = false;
+        const updatePreview = () => {
+            item.classList.toggle('is-preview', hovered || Boolean(link?.matches(':focus-visible')));
+            updateIcon(item);
+        };
+
+        link?.addEventListener('mouseenter', () => {
+            hovered = true;
+            updatePreview();
+        });
+        link?.addEventListener('mouseleave', () => {
+            hovered = false;
+            updatePreview();
+        });
+        link?.addEventListener('focus', updatePreview);
+        link?.addEventListener('blur', updatePreview);
 
         link?.addEventListener('click', (event) => {
             event.preventDefault();
@@ -230,7 +252,30 @@ const initReviewLoops = () => {
     updateLoopMetrics();
 };
 
+const initBicycleMarquee = () => {
+    const banner = document.querySelector('.text-container_top .inner');
+    if (!banner || banner.querySelector('.con1__marquee-track')) return;
+
+    const track = document.createElement('div');
+    track.className = 'con1__marquee-track';
+    const group = document.createElement('div');
+    group.className = 'con1__marquee-group';
+    group.append(...banner.childNodes);
+    track.append(group);
+
+    // Repeat the whole composition so the loop also stays filled on wide screens.
+    [-1, 1, 2].forEach((position) => {
+        const copy = group.cloneNode(true);
+        copy.setAttribute('aria-hidden', 'true');
+        copy.inert = true;
+        copy.style.left = `${position * 2048}px`;
+        track.append(copy);
+    });
+    banner.append(track);
+};
+
 (() => {
+    initBicycleMarquee();
     initHeroSwiper();
     initTopButton();
     initLanguagePicker();
